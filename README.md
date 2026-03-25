@@ -9,13 +9,6 @@ This is a digital Gossip Girl-style app made with [Rork](https://rork.com) — n
 - Chat & message simulation
 - Fake rumors functionality
 
-## 📸 Screenshots
-
-> Add screenshots from your app by exporting them or taking screenshots from Rork!
-
-## 🔗 Try the App
-
-👉 [Click here to open the app](https://gossip-girl-mobile-app.rork.app)
 
 ## 🛠 Built With
 - Rork (Free Plan)

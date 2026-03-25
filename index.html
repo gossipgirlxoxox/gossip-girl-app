@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotted: Upper East Side</title>
+
+<style>
+:root {
+  --gold:#d4af37;
+  --bg:#000;
+  --text:#f8f5f0;
+}
+
+body {
+  margin:0;
+  font-family:sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+body.light {
+  --bg:#fdf6f0;
+  --text:#111;
+}
+
+header {
+  text-align:center;
+  padding:20px;
+  color:var(--gold);
+}
+
+.layout {
+  display:flex;
+}
+
+.sidebar {
+  width:220px;
+  padding:10px;
+  border-right:1px solid #333;
+}
+
+.main {
+  flex:1;
+  max-width:700px;
+  margin:auto;
+}
+
+.card {
+  border:1px solid #333;
+  border-radius:15px;
+  padding:15px;
+  margin:10px;
+}
+
+.exposed {
+  border:2px solid red;
+  box-shadow:0 0 15px red;
+}
+
+button {
+  padding:6px;
+  margin:3px;
+  border:none;
+  border-radius:8px;
+  background:var(--gold);
+  cursor:pointer;
+}
+
+input, textarea, select {
+  width:100%;
+  margin:5px 0;
+  padding:6px;
+}
+
+.notify {
+  position:fixed;
+  top:10px;
+  right:10px;
+  background:black;
+  color:gold;
+  padding:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Spotted</h1>
+  <p>XOXO Gossip Girl</p>
+  <button onclick="login()">Login</button>
+  <button onclick="loginAdmin()">👑 Admin</button>
+  <button onclick="toggleTheme()">🌗 Theme</button>
+</header>
+
+<div class="layout">
+
+<div class="sidebar">
+<h3>💬 DMs</h3>
+<input id="dmTo" placeholder="To...">
+<input id="dmText" placeholder="Message">
+<button onclick="sendDM()">Send</button>
+<div id="dmList"></div>
+</div>
+
+<div class="main">
+
+<div class="card">
+<textarea id="postText" placeholder="Spotted..."></textarea>
+<input id="location" placeholder="Location">
+<input id="image" type="file">
+<select id="stickerSelect">
+<option>💋</option>
+<option>🍸</option>
+<option>💎</option>
+<option>👠</option>
+</select>
+<label><input type="checkbox" id="anonymousTip"> Anonymous</label>
+<button onclick="createPost()">Post</button>
+</div>
+
+<div id="posts"></div>
+
+</div>
+
+</div>
+
+<script>
+/* STORAGE */
+let posts = JSON.parse(localStorage.getItem('posts')||"[]");
+let messages = JSON.parse(localStorage.getItem('dms')||"{}");
+
+/* USER */
+let currentUser = localStorage.getItem('user') || "Guest";
+
+/* ADMIN */
+let isAdmin = false;
+const ADMIN_PASSWORD = "yourpassword123"; // CHANGE THIS
+
+/* LOGIN */
+function login(){
+  const u = prompt("Username:");
+  if(u){
+    currentUser = u;
+    localStorage.setItem('user', u);
+    notify("Logged in as " + u);
+  }
+}
+
+function loginAdmin(){
+  const pass = prompt("Admin password:");
+  if(pass === ADMIN_PASSWORD){
+    isAdmin = true;
+    notify("Welcome Gossip Girl 👑");
+    render();
+  } else {
+    notify("Wrong password");
+  }
+}
+
+/* THEME */
+function toggleTheme(){
+  document.body.classList.toggle('light');
+}
+
+/* NOTIFY */
+function notify(text){
+  const n = document.createElement('div');
+  n.className = 'notify';
+  n.innerText = text;
+  document.body.appendChild(n);
+  setTimeout(()=> n.remove(), 3000);
+}
+
+/* POSTS */
+function createPost(){
+  const file = document.getElementById('image').files[0];
+  let img = file ? URL.createObjectURL(file) : '';
+
+  posts.unshift({
+    user: document.getElementById('anonymousTip').checked ? 'Anonymous' : currentUser,
+    verified: !document.getElementById('anonymousTip').checked,
+    text: document.getElementById('postText').value,
+    loc: document.getElementById('location').value,
+    sticker: document.getElementById('stickerSelect').value,
+    img: img,
+    likes:0,
+    exposed:false,
+    comments:[]
+  });
+
+  save();
+  render();
+  notify("Spotted: new gossip posted 👀");
+}
+
+function save(){
+  localStorage.setItem('posts', JSON.stringify(posts));
+}
+
+/* COMMENTS */
+function addComment(i){
+  const text = document.getElementById(`cText${i}`).value;
+  const file = document.getElementById(`cImg${i}`).files[0];
+  const sticker = document.getElementById(`cSticker${i}`).value;
+
+  let img = file ? URL.createObjectURL(file) : '';
+
+  posts[i].comments.push({text, img, sticker});
+  save();
+  render();
+}
+
+/* DELETE */
+function deletePost(i){
+  posts.splice(i,1);
+  save();
+  render();
+}
+
+/* DMs */
+function sendDM(){
+  const to = document.getElementById('dmTo').value;
+  const msg = document.getElementById('dmText').value;
+
+  if(!messages[to]) messages[to] = [];
+
+  messages[to].push({
+    from: currentUser,
+    text: msg
+  });
+
+  localStorage.setItem('dms', JSON.stringify(messages));
+  renderDMs();
+}
+
+/* RENDER DMs */
+function renderDMs(){
+  const dmDiv = document.getElementById('dmList');
+  dmDiv.innerHTML='';
+
+  Object.keys(messages).forEach(user=>{
+    messages[user].forEach(m=>{
+      const el = document.createElement('div');
+      el.innerText = `${m.from}: ${m.text}`;
+      dmDiv.appendChild(el);
+    });
+  });
+}
+
+/* RENDER POSTS */
+function render(){
+  const postsDiv = document.getElementById('posts');
+  postsDiv.innerHTML='';
+
+  posts.forEach((p,i)=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+
+    if(p.exposed) div.classList.add('exposed');
+
+    div.innerHTML = `
+      <b>${p.user}</b> ${p.verified ? '✔️ Verified' : '🕵️ Anonymous'}<br>
+      ${p.loc || ''}<br><br>
+      ${p.text}<br>
+      ${p.img ? `<img src="${p.img}" width="100%">` : ''}
+      <div>${p.sticker}</div>
+    `;
+
+    /* buttons */
+    const like = document.createElement('button');
+    like.innerText = '❤ '+p.likes;
+    like.onclick = ()=>{p.likes++; save(); render();};
+
+    const expose = document.createElement('button');
+    expose.innerText = '⚠️ Expose';
+    expose.onclick = ()=>{
+      p.exposed = !p.exposed;
+      save();
+      render();
+    };
+
+    div.appendChild(like);
+    div.appendChild(expose);
+
+    if(isAdmin){
+      const del = document.createElement('button');
+      del.innerText = '🗑 Delete';
+      del.onclick = ()=> deletePost(i);
+      div.appendChild(del);
+    }
+
+    /* COMMENT BOX */
+    const commentBox = document.createElement('div');
+    commentBox.innerHTML = `
+      <textarea id="cText${i}" placeholder="Comment"></textarea>
+      <input type="file" id="cImg${i}">
+      <select id="cSticker${i}">
+        <option>💋</option>
+        <option>🍸</option>
+        <option>💎</option>
+      </select>
+      <button onclick="addComment(${i})">Comment</button>
+    `;
+    div.appendChild(commentBox);
+
+    /* COMMENTS */
+    p.comments.forEach(c=>{
+      const cDiv = document.createElement('div');
+      cDiv.className='card';
+      cDiv.innerHTML = `
+        ${c.text}<br>
+        ${c.img ? `<img src="${c.img}" width="100%">` : ''}
+        ${c.sticker}
+      `;
+      div.appendChild(cDiv);
+    });
+
+    postsDiv.appendChild(div);
+  });
+}
+
+render();
+renderDMs();
+</script>
+
+</body>
+</html>

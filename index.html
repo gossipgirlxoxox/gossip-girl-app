@@ -134,31 +134,26 @@ textarea.comment-box { margin-top: 10px; resize: none; }
 <header>
   <h1>Spotted</h1>
   <p>You know you love me... XOXO</p>
-  <button onclick="login()">Login</button>
+  <button id="loginBtn" onclick="login()">Login</button>
   <button onclick="logout()">Logout</button>
   <button onclick="loginAdmin()">👑 Admin Login</button>
 </header>
 
 <div class="layout">
-
 <div class="sidebar">
   <h3>🔥 Gossip</h3>
   <div id="trending"></div>
-
   <h3>⏰ Sightings</h3>
   <div id="stories"></div>
   <button onclick="addStory()">+ Sight</button>
-
   <h3>💬 Messages</h3>
   <div id="dmList"></div>
   <button onclick="sendDM()">💌 New DM</button>
-
   <h3>👑 Elite Users</h3>
   <div id="eliteList"></div>
 </div>
 
 <div class="main">
-
 <div class="card">
   <textarea id="postText" placeholder="Spotted on the Upper East Side..."></textarea>
   <input id="location" placeholder="Location">
@@ -175,7 +170,6 @@ textarea.comment-box { margin-top: 10px; resize: none; }
 </div>
 
 <div id="posts"></div>
-
 </div>
 </div>
 
@@ -193,11 +187,27 @@ function loginAdmin(){
 }
 
 function login(){
+  if(currentUser){
+    alert("Already logged in as " + currentUser);
+    return;
+  }
   const name = prompt("Enter your username:");
-  if(name){ currentUser = name; localStorage.setItem('user', name); alert("Welcome " + name); }
+  if(name){
+    currentUser = name;
+    localStorage.setItem('user', name);
+    alert("Welcome " + name);
+    document.getElementById('loginBtn').innerText = `Logged in as ${name}`;
+    render();
+  }
 }
 
-function logout(){ localStorage.removeItem('user'); currentUser = null; }
+function logout(){
+  localStorage.removeItem('user');
+  currentUser = null;
+  alert("Logged out");
+  document.getElementById('loginBtn').innerText = "Login";
+  render();
+}
 
 function save(){ 
   localStorage.setItem('posts', JSON.stringify(posts)); 
@@ -344,7 +354,15 @@ window.addEventListener('storage', () => {
   render();
 });
 
-render();
+// Persistent login
+window.onload = function(){
+  currentUser = localStorage.getItem('user') || null;
+  if(currentUser){
+    alert("Welcome back, " + currentUser);
+    document.getElementById('loginBtn').innerText = `Logged in as ${currentUser}`;
+  }
+  render();
+};
 </script>
 
 </body>

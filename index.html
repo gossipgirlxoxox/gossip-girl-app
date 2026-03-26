@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Spotted 👀</title>
+<title>Spotted</title>
 
 <style>
 body {background:black;color:white;font-family:sans-serif;}
 .card {background:#111;padding:15px;margin:10px;border-radius:10px;}
-button {background:gold;border:none;padding:8px;margin:5px;}
-textarea {width:100%;padding:10px;margin:10px 0;}
+button {background:gold;border:none;padding:6px;margin:4px;}
+textarea {width:100%;margin:5px 0;}
+img {max-width:100%;border-radius:10px;}
+.exposed {box-shadow:0 0 20px red;}
 </style>
 
 </head>
@@ -19,34 +21,43 @@ textarea {width:100%;padding:10px;margin:10px 0;}
 <button onclick="signup()">Sign Up</button>
 <button onclick="login()">Login</button>
 <button onclick="logout()">Logout</button>
+<button onclick="adminLogin()">👑 Admin</button>
 
-<div>
-<textarea id="postText" placeholder="Spotted..."></textarea>
+<div class="card">
+<textarea id="postText"></textarea>
+<input type="file" id="image">
 <button onclick="createPost()">Post</button>
 </div>
 
 <div id="posts"></div>
 
+<button onclick="sendTip()">📩 Send Anonymous Tip</button>
+<button onclick="viewTips()">👁 View Tips</button>
+
 <script type="module">
 
-// 🔥 IMPORTS (v12 style)
+// 🔥 IMPORTS
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { 
-  getAuth, createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, signOut, onAuthStateChanged 
+import {
+  getAuth, createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
-import { 
-  getFirestore, collection, addDoc, 
-  onSnapshot, query, orderBy 
+import {
+  getFirestore, collection, addDoc, doc,
+  updateDoc, deleteDoc, onSnapshot, query, orderBy
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-// 🔐 YOUR CONFIG
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
+
+// 🔐 CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCjrvmy6yxF9N5evXShQNM3Vt9LhmtqafA",
   authDomain: "gossipgirl-a4f2d.firebaseapp.com",
   projectId: "gossipgirl-a4f2d",
-  storageBucket: "gossipgirl-a4f2d.firebasestorage.app",
+  storageBucket: "gossipgirl-a4f2d.appspot.com",
   messagingSenderId: "367254403065",
   appId: "1:367254403065:web:70246b85fcc093453a6f28"
 };
@@ -55,84 +66,177 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-// 🔐 AUTH FUNCTIONS
-window.signup = async function(){
-  const email = prompt("Email:");
-  const pass = prompt("Password:");
-  try {
-    await createUserWithEmailAndPassword(auth, email, pass);
-    alert("Account created!");
-  } catch(e){
-    alert(e.message);
-  }
-};
-
-window.login = async function(){
-  const email = prompt("Email:");
-  const pass = prompt("Password:");
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-    alert("Logged in!");
-  } catch(e){
-    alert(e.message);
-  }
-};
-
-window.logout = function(){
-  signOut(auth);
-};
-
-// 📌 CURRENT USER
 let currentUser = null;
+let isAdmin = false;
 
-onAuthStateChanged(auth, (user)=>{
-  if(user){
-    currentUser = user;
-    console.log("Logged in as", user.email);
-  } else {
-    currentUser = null;
-    console.log("Logged out");
+onAuthStateChanged(auth, user => currentUser = user);
+
+// 🔐 AUTH
+window.signup = async () => {
+  const email = prompt("Email:");
+  const pass = prompt("Password:");
+  await createUserWithEmailAndPassword(auth,email,pass);
+};
+
+window.login = async () => {
+  const email = prompt("Email:");
+  const pass = prompt("Password:");
+  await signInWithEmailAndPassword(auth,email,pass);
+};
+
+window.logout = () => signOut(auth);
+
+window.adminLogin = () => {
+  if(prompt("Admin password") === "xoxo"){
+    isAdmin = true;
+    alert("Welcome Gossip Girl");
   }
-});
+};
+
+// 📸 IMAGE UPLOAD
+async function uploadImage(file){
+  const storageRef = ref(storage, 'images/' + Date.now());
+  await uploadBytes(storageRef, file);
+  return await getDownloadURL(storageRef);
+}
 
 // 📝 CREATE POST
-window.createPost = async function(){
-  if(!currentUser){
-    alert("Login first!");
-    return;
-  }
+window.createPost = async () => {
+  if(!currentUser) return alert("Login first");
 
-  const text = document.getElementById("postText").value;
+  const text = document.getElementById('postText').value;
+  const file = document.getElementById('image').files[0];
 
-  await addDoc(collection(db, "posts"), {
-    text: text,
+  let imgURL = "";
+  if(file) imgURL = await uploadImage(file);
+
+  await addDoc(collection(db,"posts"),{
+    text,
+    img: imgURL,
+    user: currentUser.email,
+    likes: [],
+    exposed: false,
+    time: Date.now()
+  });
+};
+
+// ❤️ LIKE SYSTEM
+async function likePost(id, likes){
+  if(!currentUser) return;
+
+  let newLikes = likes.includes(currentUser.uid)
+    ? likes.filter(l => l !== currentUser.uid)
+    : [...likes, currentUser.uid];
+
+  await updateDoc(doc(db,"posts",id), {likes:newLikes});
+}
+
+// 💬 COMMENTS
+async function addComment(postId){
+  const text = prompt("Comment:");
+  if(!text) return;
+
+  await addDoc(collection(db,"posts",postId,"comments"),{
+    text,
     user: currentUser.email,
     time: Date.now()
   });
+}
 
-  document.getElementById("postText").value = "";
+// 👑 DELETE / EXPOSE
+async function deletePost(id){
+  if(!isAdmin) return;
+  await deleteDoc(doc(db,"posts",id));
+}
+
+async function exposePost(id, val){
+  if(!isAdmin) return;
+  await updateDoc(doc(db,"posts",id), {exposed:!val});
+}
+
+// 🕵️ TIPS
+window.sendTip = async () => {
+  const tip = prompt("Anonymous tip:");
+  if(tip){
+    await addDoc(collection(db,"tips"), {text:tip,time:Date.now()});
+  }
 };
 
-// 🔥 REAL-TIME POSTS
-const q = query(collection(db, "posts"), orderBy("time","desc"));
+window.viewTips = () => {
+  if(!isAdmin) return alert("Admins only");
+  onSnapshot(collection(db,"tips"), snap=>{
+    let txt="";
+    snap.forEach(d=> txt+=d.data().text+"\n\n");
+    alert(txt);
+  });
+};
 
-onSnapshot(q, (snapshot)=>{
-  const postsDiv = document.getElementById("posts");
-  postsDiv.innerHTML = "";
+// 🔥 RENDER POSTS
+const q = query(collection(db,"posts"), orderBy("time","desc"));
 
-  snapshot.forEach(doc=>{
-    const p = doc.data();
+onSnapshot(q, snap=>{
+  const div = document.getElementById('posts');
+  div.innerHTML="";
 
-    const el = document.createElement("div");
+  snap.forEach(docSnap=>{
+    const p = docSnap.data();
+    const id = docSnap.id;
+
+    const el = document.createElement('div');
     el.className = "card";
+    if(p.exposed) el.classList.add("exposed");
+
+    const badge = p.likes.length > 5 ? "💎 Elite" : "";
 
     el.innerHTML = `
-      <b>${p.user}</b>
+      <b>${p.user} ${badge}</b>
       <p>${p.text}</p>
+      ${p.img ? `<img src="${p.img}">` : ""}
+      <p>❤️ ${p.likes.length}</p>
     `;
 
-    postsDiv.appendChild(el);
+    // Like button
+    const likeBtn = document.createElement('button');
+    likeBtn.innerText = "Like";
+    likeBtn.onclick = ()=>likePost(id,p.likes);
+    el.appendChild(likeBtn);
+
+    // Comment
+    const cBtn = document.createElement('button');
+    cBtn.innerText="Comment";
+    cBtn.onclick = ()=>addComment(id);
+    el.appendChild(cBtn);
+
+    // Admin buttons
+    if(isAdmin){
+      const del = document.createElement('button');
+      del.innerText="Delete";
+      del.onclick=()=>deletePost(id);
+
+      const ex = document.createElement('button');
+      ex.innerText="Expose";
+      ex.onclick=()=>exposePost(id,p.exposed);
+
+      el.appendChild(del);
+      el.appendChild(ex);
+    }
+
+    // COMMENTS RENDER
+    const commentsDiv = document.createElement('div');
+
+    onSnapshot(collection(db,"posts",id,"comments"), cSnap=>{
+      commentsDiv.innerHTML="";
+      cSnap.forEach(c=>{
+        const cEl = document.createElement('div');
+        cEl.innerText = "💬 " + c.data().text;
+        commentsDiv.appendChild(cEl);
+      });
+    });
+
+    el.appendChild(commentsDiv);
+    div.appendChild(el);
   });
 });
 

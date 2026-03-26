@@ -1,42 +1,114 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Spotted</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+
 <style>
-body {background:black;color:white;font-family:sans-serif;}
-.card {background:#111;padding:15px;margin:10px;border-radius:10px;}
-button {background:gold;border:none;padding:6px;margin:4px;}
-textarea {width:100%;margin:5px 0;}
-img {max-width:100%;border-radius:10px;}
+body {
+  margin:0;
+  font-family:Inter;
+  background:black;
+  color:#f8f5f0;
+}
+
+header {
+  text-align:center;
+  padding:20px;
+  font-family:Cinzel;
+  color:gold;
+}
+
+.layout {display:flex;}
+
+.sidebar {
+  width:220px;
+  padding:10px;
+  border-right:1px solid #333;
+}
+
+.main {
+  flex:1;
+  padding:20px;
+}
+
+.card {
+  background:#111;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+  animation: fadeIn 0.4s ease;
+}
+
+button {
+  background:gold;
+  border:none;
+  padding:8px;
+  border-radius:10px;
+  cursor:pointer;
+  margin:3px;
+}
+
+input, textarea {
+  width:100%;
+  margin:5px 0;
+  padding:8px;
+  background:#000;
+  color:white;
+  border:1px solid #333;
+}
+
+img {max-width:100%; border-radius:10px;}
+
 .exposed {box-shadow:0 0 20px red;}
+
+@keyframes fadeIn {
+  from {opacity:0; transform:translateY(10px);}
+  to {opacity:1; transform:translateY(0);}
+}
 </style>
 
 </head>
 <body>
 
-<h1>Spotted 👀</h1>
+<header>
+  <h1>Spotted</h1>
+  <p>XOXO Gossip Girl</p>
+  <button onclick="signup()">Sign Up</button>
+  <button onclick="login()">Login</button>
+  <button onclick="logout()">Logout</button>
+  <button onclick="adminLogin()">👑 Admin</button>
+</header>
 
-<button onclick="signup()">Sign Up</button>
-<button onclick="login()">Login</button>
-<button onclick="logout()">Logout</button>
-<button onclick="adminLogin()">👑 Admin</button>
+<div class="layout">
+
+<div class="sidebar">
+  <h3>💬 DMs</h3>
+  <button onclick="sendDM()">Send DM</button>
+  <div id="dmList"></div>
+
+  <h3>📩 Tips</h3>
+  <button onclick="sendTip()">Send Tip</button>
+  <button onclick="viewTips()">View Tips</button>
+</div>
+
+<div class="main">
 
 <div class="card">
-<textarea id="postText"></textarea>
+<textarea id="postText" placeholder="Spotted..."></textarea>
 <input type="file" id="image">
 <button onclick="createPost()">Post</button>
 </div>
 
 <div id="posts"></div>
 
-<button onclick="sendTip()">📩 Send Anonymous Tip</button>
-<button onclick="viewTips()">👁 View Tips</button>
+</div>
+</div>
 
 <script type="module">
 
-// 🔥 IMPORTS
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import {
   getAuth, createUserWithEmailAndPassword,
@@ -45,14 +117,13 @@ import {
 
 import {
   getFirestore, collection, addDoc, doc,
-  updateDoc, deleteDoc, onSnapshot, query, orderBy
+  updateDoc, deleteDoc, onSnapshot, query, orderBy, getDocs
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
-// 🔐 CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCjrvmy6yxF9N5evXShQNM3Vt9LhmtqafA",
   authDomain: "gossipgirl-a4f2d.firebaseapp.com",
@@ -62,7 +133,6 @@ const firebaseConfig = {
   appId: "1:367254403065:web:70246b85fcc093453a6f28"
 };
 
-// INIT
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -73,13 +143,35 @@ let isAdmin = false;
 
 onAuthStateChanged(auth, user => currentUser = user);
 
-// 🔐 AUTH
+// 🔔 Notification
+function notify(text){
+  const n = document.createElement("div");
+  n.innerText = text;
+  n.style.position="fixed";
+  n.style.bottom="20px";
+  n.style.right="20px";
+  n.style.background="black";
+  n.style.color="gold";
+  n.style.padding="10px";
+  document.body.appendChild(n);
+  setTimeout(()=>n.remove(),3000);
+}
+
+// 🔐 SIGNUP WITH USERNAME
 window.signup = async () => {
   const email = prompt("Email:");
   const pass = prompt("Password:");
-  await createUserWithEmailAndPassword(auth,email,pass);
+  const username = prompt("Username:");
+
+  const userCred = await createUserWithEmailAndPassword(auth,email,pass);
+
+  await addDoc(collection(db,"users"),{
+    uid:userCred.user.uid,
+    username:username
+  });
 };
 
+// 🔐 LOGIN
 window.login = async () => {
   const email = prompt("Email:");
   const pass = prompt("Password:");
@@ -88,12 +180,25 @@ window.login = async () => {
 
 window.logout = () => signOut(auth);
 
+// 👑 ADMIN
 window.adminLogin = () => {
-  if(prompt("Admin password") === "xoxo"){
+  if(prompt("Password") === "xoxo"){
     isAdmin = true;
     alert("Welcome Gossip Girl");
   }
 };
+
+// 🔎 GET USERNAME
+async function getUsername(uid){
+  const snap = await getDocs(collection(db,"users"));
+  let name = "Unknown";
+  snap.forEach(doc=>{
+    if(doc.data().uid === uid){
+      name = doc.data().username;
+    }
+  });
+  return name;
+}
 
 // 📸 IMAGE UPLOAD
 async function uploadImage(file){
@@ -102,46 +207,52 @@ async function uploadImage(file){
   return await getDownloadURL(storageRef);
 }
 
-// 📝 CREATE POST
+// 📝 POST
 window.createPost = async () => {
   if(!currentUser) return alert("Login first");
 
   const text = document.getElementById('postText').value;
   const file = document.getElementById('image').files[0];
 
-  let imgURL = "";
-  if(file) imgURL = await uploadImage(file);
+  let img = "";
+  if(file) img = await uploadImage(file);
+
+  const username = await getUsername(currentUser.uid);
 
   await addDoc(collection(db,"posts"),{
     text,
-    img: imgURL,
-    user: currentUser.email,
-    likes: [],
-    exposed: false,
-    time: Date.now()
+    img,
+    user:username,
+    uid:currentUser.uid,
+    likes:[],
+    exposed:false,
+    time:Date.now()
   });
+
+  notify("New gossip posted 👀");
 };
 
-// ❤️ LIKE SYSTEM
-async function likePost(id, likes){
+// ❤️ LIKE
+async function likePost(id,likes){
   if(!currentUser) return;
+  let updated = likes.includes(currentUser.uid)
+    ? likes.filter(l=>l!==currentUser.uid)
+    : [...likes,currentUser.uid];
 
-  let newLikes = likes.includes(currentUser.uid)
-    ? likes.filter(l => l !== currentUser.uid)
-    : [...likes, currentUser.uid];
-
-  await updateDoc(doc(db,"posts",id), {likes:newLikes});
+  await updateDoc(doc(db,"posts",id),{likes:updated});
 }
 
-// 💬 COMMENTS
+// 💬 COMMENT
 async function addComment(postId){
   const text = prompt("Comment:");
   if(!text) return;
 
+  const username = await getUsername(currentUser.uid);
+
   await addDoc(collection(db,"posts",postId,"comments"),{
     text,
-    user: currentUser.email,
-    time: Date.now()
+    user:username,
+    time:Date.now()
   });
 }
 
@@ -151,41 +262,64 @@ async function deletePost(id){
   await deleteDoc(doc(db,"posts",id));
 }
 
-async function exposePost(id, val){
+async function exposePost(id,val){
   if(!isAdmin) return;
-  await updateDoc(doc(db,"posts",id), {exposed:!val});
+  await updateDoc(doc(db,"posts",id),{exposed:!val});
 }
 
-// 🕵️ TIPS
-window.sendTip = async () => {
-  const tip = prompt("Anonymous tip:");
-  if(tip){
-    await addDoc(collection(db,"tips"), {text:tip,time:Date.now()});
-  }
+// 💬 DM SYSTEM (FIXED)
+window.sendDM = async () => {
+  const username = prompt("Send to:");
+  const msg = prompt("Message:");
+
+  const users = await getDocs(collection(db,"users"));
+  let target = null;
+
+  users.forEach(u=>{
+    if(u.data().username === username){
+      target = u.data().uid;
+    }
+  });
+
+  if(!target) return alert("User not found");
+
+  const chatId = [currentUser.uid,target].sort().join("_");
+
+  await addDoc(collection(db,"dms",chatId,"messages"),{
+    text:msg,
+    from:currentUser.uid,
+    time:Date.now()
+  });
+
+  notify("DM sent 💬");
 };
 
-window.viewTips = () => {
+// 🕵️ TIPS
+window.sendTip = async ()=>{
+  const t = prompt("Tip:");
+  if(t) await addDoc(collection(db,"tips"),{text:t,time:Date.now()});
+};
+
+window.viewTips = ()=>{
   if(!isAdmin) return alert("Admins only");
   onSnapshot(collection(db,"tips"), snap=>{
     let txt="";
-    snap.forEach(d=> txt+=d.data().text+"\n\n");
+    snap.forEach(d=>txt+=d.data().text+"\n\n");
     alert(txt);
   });
 };
 
-// 🔥 RENDER POSTS
-const q = query(collection(db,"posts"), orderBy("time","desc"));
-
-onSnapshot(q, snap=>{
-  const div = document.getElementById('posts');
+// 🔥 POSTS RENDER
+onSnapshot(query(collection(db,"posts"),orderBy("time","desc")), snap=>{
+  const div = document.getElementById("posts");
   div.innerHTML="";
 
   snap.forEach(docSnap=>{
     const p = docSnap.data();
     const id = docSnap.id;
 
-    const el = document.createElement('div');
-    el.className = "card";
+    const el = document.createElement("div");
+    el.className="card";
     if(p.exposed) el.classList.add("exposed");
 
     const badge = p.likes.length > 5 ? "💎 Elite" : "";
@@ -193,29 +327,27 @@ onSnapshot(q, snap=>{
     el.innerHTML = `
       <b>${p.user} ${badge}</b>
       <p>${p.text}</p>
-      ${p.img ? `<img src="${p.img}">` : ""}
+      ${p.img?`<img src="${p.img}">`:''}
       <p>❤️ ${p.likes.length}</p>
     `;
 
-    // Like button
-    const likeBtn = document.createElement('button');
-    likeBtn.innerText = "Like";
-    likeBtn.onclick = ()=>likePost(id,p.likes);
-    el.appendChild(likeBtn);
+    const likeBtn = document.createElement("button");
+    likeBtn.innerText="Like";
+    likeBtn.onclick=()=>likePost(id,p.likes);
 
-    // Comment
-    const cBtn = document.createElement('button');
+    const cBtn = document.createElement("button");
     cBtn.innerText="Comment";
-    cBtn.onclick = ()=>addComment(id);
+    cBtn.onclick=()=>addComment(id);
+
+    el.appendChild(likeBtn);
     el.appendChild(cBtn);
 
-    // Admin buttons
     if(isAdmin){
-      const del = document.createElement('button');
+      const del = document.createElement("button");
       del.innerText="Delete";
       del.onclick=()=>deletePost(id);
 
-      const ex = document.createElement('button');
+      const ex = document.createElement("button");
       ex.innerText="Expose";
       ex.onclick=()=>exposePost(id,p.exposed);
 
@@ -223,15 +355,14 @@ onSnapshot(q, snap=>{
       el.appendChild(ex);
     }
 
-    // COMMENTS RENDER
-    const commentsDiv = document.createElement('div');
+    const commentsDiv = document.createElement("div");
 
     onSnapshot(collection(db,"posts",id,"comments"), cSnap=>{
       commentsDiv.innerHTML="";
       cSnap.forEach(c=>{
-        const cEl = document.createElement('div');
-        cEl.innerText = "💬 " + c.data().text;
-        commentsDiv.appendChild(cEl);
+        const el = document.createElement("div");
+        el.innerText="💬 "+c.data().text;
+        commentsDiv.appendChild(el);
       });
     });
 

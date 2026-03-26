@@ -4,365 +4,286 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spotted: Upper East Side</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Cinzel:wght@700&family=Inter&display=swap" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+
 <style>
-:root {
-  --gold: #d4af37;
-  --cream: #f8f5f0;
-  --black: #000;
-  --glass: rgba(255,255,255,0.08);
-  --glow: rgba(212,175,55,0.4);
-}
-* { box-sizing: border-box; }
 body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, #111, #000);
-  color: var(--cream);
+  margin:0;
+  font-family:Inter;
+  background:black;
+  color:#f8f5f0;
 }
+
 header {
-  text-align: center;
-  padding: 25px 10px;
-  font-family: 'Cinzel', serif;
-  letter-spacing: 3px;
-  text-shadow: 0 0 10px var(--gold);
+  text-align:center;
+  padding:20px;
+  font-family:Cinzel;
+  color:gold;
 }
-header h1 { font-size: 3rem; color: var(--gold); margin-bottom: 5px; }
-header p { font-size: 0.9rem; opacity: 0.7; font-style: italic; }
-header button { margin: 5px; }
-.layout { display: flex; min-height: 100vh; }
+
+.layout {display:flex;}
+
 .sidebar {
-  width: 220px;
-  background: linear-gradient(180deg, #0a0a0a, #000);
-  padding: 15px;
-  height: 100vh;
-  border-right: 1px solid rgba(255,255,255,0.1);
-  overflow-y: auto;
+  width:220px;
+  padding:10px;
+  border-right:1px solid #333;
 }
-.sidebar h3 {
-  font-family: 'Playfair Display', serif;
-  color: var(--gold);
-  font-size: 1.1rem;
-  margin-bottom: 10px;
-  text-shadow: 0 0 6px var(--gold);
+
+.main {
+  flex:1;
+  padding:20px;
 }
-.story {
-  display: inline-block;
-  border: 2px solid var(--gold);
-  padding: 12px;
-  border-radius: 50%;
-  margin: 5px 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.story:hover { transform: scale(1.1); box-shadow: 0 0 15px var(--gold); }
-.elite {
-  border: 2px solid var(--gold);
-  padding: 10px;
-  border-radius: 15px;
-  margin-bottom: 15px;
-  background: rgba(212,175,55,0.1);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: bold;
-}
-.main { flex: 1; max-width: 700px; margin: auto; padding: 15px; }
+
 .card {
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 0 20px var(--glow);
-  transition: transform 0.2s, box-shadow 0.2s;
+  background:#111;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+  border:1px solid #333;
 }
-.card:hover { transform: translateY(-2px); box-shadow: 0 0 30px var(--glow); }
-input, textarea, select {
-  width: 100%;
-  padding: 10px;
-  margin: 6px 0;
-  border: none;
-  border-radius: 12px;
-  background: #111;
-  color: var(--cream);
-  font-size: 0.9rem;
-}
+
 button {
-  background: linear-gradient(135deg, var(--gold), #b8962e);
-  border: none;
-  padding: 10px 15px;
-  border-radius: 12px;
-  color: var(--black);
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.2s;
-  margin-top: 5px;
+  background:gold;
+  border:none;
+  padding:8px;
+  border-radius:10px;
+  cursor:pointer;
 }
-button:hover { transform: scale(1.05); box-shadow: 0 0 12px var(--gold); }
-.meta {
-  font-size: 0.75rem;
-  opacity: 0.9;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+
+input, textarea, select {
+  width:100%;
+  margin:5px 0;
+  padding:8px;
+  background:#000;
+  color:white;
+  border:1px solid #333;
 }
-.avatar {
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: var(--black);
-  background: var(--gold);
+
+img {max-width:100%; border-radius:10px;}
+
+.blast {
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:black;
+  color:gold;
+  padding:10px;
+  border:2px solid gold;
 }
-.reputation { font-size: 0.7rem; color: var(--gold); margin-top: 5px; }
-.signature { text-align: right; font-family: 'Playfair Display', serif; margin-top: 10px; color: var(--gold); font-style: italic; }
-img { border-radius: 15px; margin: 10px 0; max-height: 350px; object-fit: cover; }
-textarea.comment-box { margin-top: 10px; resize: none; }
-.comment-section { margin-top: 10px; }
+
+.exposed {
+  box-shadow:0 0 20px red;
+}
 </style>
 </head>
+
 <body>
 
 <header>
   <h1>Spotted</h1>
-  <p>You know you love me... XOXO</p>
-  <button id="loginBtn" onclick="login()">Login</button>
+  <p>XOXO Gossip Girl</p>
+  <button onclick="login()">Login</button>
   <button onclick="logout()">Logout</button>
-  <button onclick="loginAdmin()">👑 Admin Login</button>
+  <button onclick="adminLogin()">👑 Admin</button>
 </header>
 
 <div class="layout">
+
 <div class="sidebar">
-  <h3>🔥 Gossip</h3>
-  <div id="trending"></div>
-  <h3>⏰ Sightings</h3>
-  <div id="stories"></div>
-  <button onclick="addStory()">+ Sight</button>
-  <h3>💬 Messages</h3>
-  <div id="dmList"></div>
-  <button onclick="sendDM()">💌 New DM</button>
-  <h3>👑 Elite Users</h3>
-  <div id="eliteList"></div>
+  <h3>📩 Tips</h3>
+  <button onclick="sendTip()">Send Tip</button>
+  <button onclick="viewTips()">View Tips</button>
+
+  <h3>💬 Chat</h3>
+  <button onclick="sendChat()">Send Chat</button>
+  <div id="chat"></div>
+
+  <h3>💔 Status</h3>
+  <button onclick="setRelationship()">Set Status</button>
 </div>
 
 <div class="main">
+
 <div class="card">
-  <textarea id="postText" placeholder="Spotted on the Upper East Side..."></textarea>
-  <input id="location" placeholder="Location">
-  <input id="image" type="file" accept="image/*">
-  <select id="stickerSelect">
-    <option value="">Mood</option>
-    <option>💋</option>
-    <option>🍸</option>
-    <option>💎</option>
-    <option>👠</option>
-  </select>
-  <label><input type="checkbox" id="anonymousTip"> Anonymous Tip</label>
-  <button onclick="createPost()">Post Gossip</button>
+<textarea id="postText"></textarea>
+<input id="image" type="file">
+<select id="category">
+<option>Drama</option>
+<option>School</option>
+<option>Relationships</option>
+</select>
+<button onclick="createPost()">Post</button>
 </div>
 
 <div id="posts"></div>
+
 </div>
+
 </div>
 
 <script>
-let isAdmin = false;
-let currentUser = localStorage.getItem('user') || null;
-let posts = JSON.parse(localStorage.getItem('posts')||"[]");
-let eliteUsers = ['Blair','Serena','Chuck','Nate'];
-let dms = JSON.parse(localStorage.getItem('dms')||"{}");
 
-function loginAdmin(){
-  const pass = prompt("Enter Gossip Girl password:");
-  if(pass === "xoxo"){ isAdmin = true; alert("Welcome back, Gossip Girl."); render(); }
-  else alert("Access denied.");
+let posts = JSON.parse(localStorage.getItem('posts')||"[]");
+let tips = JSON.parse(localStorage.getItem('tips')||"[]");
+let chat = JSON.parse(localStorage.getItem('chat')||"[]");
+
+let user = localStorage.getItem('user');
+let isAdmin = false;
+
+function save(){
+  localStorage.setItem('posts',JSON.stringify(posts));
+  localStorage.setItem('tips',JSON.stringify(tips));
+  localStorage.setItem('chat',JSON.stringify(chat));
 }
 
 function login(){
-  if(currentUser){
-    alert("Already logged in as " + currentUser);
-    return;
-  }
-  const name = prompt("Enter your username:");
-  if(name){
-    currentUser = name;
-    localStorage.setItem('user', name);
-    alert("Welcome " + name);
-    document.getElementById('loginBtn').innerText = `Logged in as ${name}`;
-    render();
-  }
+  if(user) return alert("Already logged in");
+  user = prompt("Username:");
+  localStorage.setItem('user',user);
 }
 
 function logout(){
+  user=null;
   localStorage.removeItem('user');
-  currentUser = null;
-  alert("Logged out");
-  document.getElementById('loginBtn').innerText = "Login";
-  render();
 }
 
-function save(){ 
-  localStorage.setItem('posts', JSON.stringify(posts)); 
-  localStorage.setItem('dms', JSON.stringify(dms)); 
+function adminLogin(){
+  if(prompt("Password:") === "xoxo"){
+    isAdmin=true;
+    alert("Welcome Gossip Girl");
+  }
+}
+
+function showBlast(text){
+  const el = document.createElement('div');
+  el.className='blast';
+  el.innerText="SPOTTED: "+text;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3000);
 }
 
 function createPost(){
   const file = document.getElementById('image').files[0];
-  const imgURL = file ? URL.createObjectURL(file) : '';
-  posts.unshift({
-    user: document.getElementById('anonymousTip').checked ? 'Anonymous' : (currentUser || 'Guest'),
-    text: document.getElementById('postText').value,
-    loc: document.getElementById('location').value,
-    sticker: document.getElementById('stickerSelect').value,
-    img: imgURL,
-    likes: 0,
-    reputation: Math.floor(Math.random()*100),
-    comments: [],
-    exposed: false
-  });
-  save(); render();
-}
+  const reader = new FileReader();
 
-function deletePost(index){
-  if(isAdmin && confirm("Delete this post?")){ posts.splice(index,1); save(); render(); }
-}
-
-function addStory(){
-  const s = prompt('Story text'); if(s){
-    const el = document.createElement('div'); el.className='story'; el.innerText = s;
-    document.getElementById('stories').appendChild(el);
-  }
-}
-
-function addComment(index){
-  const textArea = document.getElementById(`cText${index}`);
-  const stickerSelect = document.getElementById(`cSticker${index}`);
-  const imgInput = document.getElementById(`cImg${index}`);
-  if(!textArea) return;
-  const text = textArea.value.trim();
-  const sticker = stickerSelect.value;
-
-  if(imgInput.files[0]){
-    const reader = new FileReader();
-    reader.onload = function(e){
-      posts[index].comments.push({ text, sticker, img: e.target.result });
-      save(); render();
-    };
-    reader.readAsDataURL(imgInput.files[0]);
-  } else {
-    if(text === '' && sticker === '') return;
-    posts[index].comments.push({ text, sticker, img: '' });
-    save(); render();
+  reader.onload = function(e){
+    posts.unshift({
+      text:document.getElementById('postText').value,
+      img:e.target.result,
+      user:user||"Anonymous",
+      likes:0,
+      comments:[],
+      exposed:false,
+      category:document.getElementById('category').value
+    });
+    save();
+    showBlast(posts[0].text);
+    render();
   }
 
-  textArea.value = ''; stickerSelect.value = ''; imgInput.value = '';
+  if(file) reader.readAsDataURL(file);
+  else reader.onload({target:{result:''}});
 }
 
-function sendDM(){
-  if(!currentUser){ alert("Login first!"); return; }
-  const to = prompt("Send to:"); const msg = prompt("Message:");
-  if(!dms[to]) dms[to] = [];
-  dms[to].push({from: currentUser, text: msg});
-  save(); renderDMs();
-}
-
-function renderDMs(){
-  const dmList = document.getElementById('dmList'); dmList.innerHTML='';
-  if(!currentUser) return;
-  const myMessages = dms[currentUser] || [];
-  myMessages.forEach(m=>{
-    const div = document.createElement('div'); div.className='card';
-    div.innerHTML = `<b>${m.from}:</b> ${m.text}`;
-    dmList.appendChild(div);
-  });
-}
-
-function renderElite(){
-  const eliteDiv = document.getElementById('eliteList'); eliteDiv.innerHTML='';
-  eliteUsers.forEach(u=>{
-    const div = document.createElement('div'); div.className='elite';
-    div.innerHTML = `<div class="avatar">${u.slice(0,2)}</div> ${u}`;
-    eliteDiv.appendChild(div);
-  });
+function addComment(i){
+  const text = prompt("Comment:");
+  if(!text) return;
+  posts[i].comments.push({text});
+  save();
+  render();
 }
 
 function render(){
-  const postsDiv = document.getElementById('posts'); postsDiv.innerHTML='';
-  posts.forEach((p,i)=>{
-    const div = document.createElement('div'); div.className='card';
-    if(p.user!=='Anonymous') div.classList.add('elite');
-    if(p.exposed) div.style.boxShadow = "0 0 25px red";
+  const div = document.getElementById('posts');
+  div.innerHTML='';
 
-    div.innerHTML = `
-      <div class="meta"><div class="avatar">${p.user.slice(0,2)}</div>
-      <span>${p.user} ${p.loc ? '• '+p.loc:''}</span></div>
+  posts.forEach((p,i)=>{
+    const el = document.createElement('div');
+    el.className='card';
+    if(p.exposed) el.classList.add('exposed');
+
+    el.innerHTML = `
+      <b>${p.user}</b> • ${p.category}
       <p>${p.text}</p>
-      ${p.img ? `<img src="${p.img}">` : ''}
-      <div>${p.sticker || ''}</div>
-      <div class="reputation">Reputation: ${p.reputation}</div>
-      <div class="signature">— Gossip Girl</div>
+      ${p.img?`<img src="${p.img}">`:''}
     `;
 
-    const like = document.createElement('button'); like.innerText = '❤ ' + p.likes;
-    like.onclick = ()=>{ p.likes++; save(); render(); }; div.appendChild(like);
+    const like = document.createElement('button');
+    like.innerText="❤ "+p.likes;
+    like.onclick=()=>{p.likes++; save(); render();};
 
-    const expose = document.createElement('button'); expose.innerText = '🔥 Expose';
-    expose.onclick = ()=>{ p.exposed = !p.exposed; save(); render(); }; div.appendChild(expose);
+    const expose = document.createElement('button');
+    expose.innerText="🔥 Expose";
+    expose.onclick=()=>{
+      p.exposed=!p.exposed;
+      document.body.style.background="darkred";
+      setTimeout(()=>document.body.style.background="black",300);
+      save(); render();
+    };
+
+    el.appendChild(like);
+    el.appendChild(expose);
 
     if(isAdmin){
-      const del = document.createElement('button'); del.innerText='🗑 Delete';
-      del.onclick = ()=>deletePost(i); div.appendChild(del);
+      const del = document.createElement('button');
+      del.innerText="Delete";
+      del.onclick=()=>{posts.splice(i,1); save(); render();};
+      el.appendChild(del);
     }
 
-    const commentBox = document.createElement('div');
-    commentBox.innerHTML = `
-      <textarea class="comment-box" placeholder="Leave a comment..." id="cText${i}"></textarea>
-      <input type="file" accept="image/*" id="cImg${i}">
-      <select id="cSticker${i}">
-        <option value="">Mood</option>
-        <option>💋</option><option>🍸</option><option>💎</option><option>👠</option>
-      </select>
-      <button onclick="addComment(${i})">Comment</button>
-    `;
-    div.appendChild(commentBox);
-
-    const commentsDiv = document.createElement('div'); commentsDiv.className='comment-section';
     p.comments.forEach(c=>{
-      const cEl = document.createElement('div'); cEl.className='card';
-      cEl.innerHTML = `<p>${c.text}</p>${c.img ? `<img src="${c.img}">` : ''}<div>${c.sticker || ''}</div>`;
-      commentsDiv.appendChild(cEl);
+      const cEl = document.createElement('div');
+      cEl.innerText="💬 "+c.text;
+      el.appendChild(cEl);
     });
-    div.appendChild(commentsDiv);
 
-    postsDiv.appendChild(div);
+    const cBtn = document.createElement('button');
+    cBtn.innerText="Comment";
+    cBtn.onclick=()=>addComment(i);
+
+    el.appendChild(cBtn);
+
+    div.appendChild(el);
   });
-  renderDMs(); renderElite();
+
+  renderChat();
 }
 
-// Sync across tabs without wiping inputs
-window.addEventListener('storage', () => {
-  posts = JSON.parse(localStorage.getItem('posts') || "[]");
-  dms = JSON.parse(localStorage.getItem('dms') || "{}");
-  render();
-});
+function sendTip(){
+  const t = prompt("Tip:");
+  if(t){ tips.push(t); save(); }
+}
 
-// Persistent login
-window.onload = function(){
-  currentUser = localStorage.getItem('user') || null;
-  if(currentUser){
-    alert("Welcome back, " + currentUser);
-    document.getElementById('loginBtn').innerText = `Logged in as ${currentUser}`;
-  }
-  render();
-};
+function viewTips(){
+  if(isAdmin) alert(tips.join("\n\n"));
+}
+
+function sendChat(){
+  const msg = prompt("Message:");
+  chat.push({user:user,text:msg});
+  save();
+  renderChat();
+}
+
+function renderChat(){
+  const div = document.getElementById('chat');
+  div.innerHTML='';
+  chat.forEach(c=>{
+    const el = document.createElement('div');
+    el.innerText=c.user+": "+c.text;
+    div.appendChild(el);
+  });
+}
+
+function setRelationship(){
+  const r = prompt("Status:");
+  localStorage.setItem('relationship',r);
+}
+
+window.onload = render;
+
 </script>
 
 </body>

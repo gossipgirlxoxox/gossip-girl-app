@@ -2,287 +2,139 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spotted: Upper East Side</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+<title>Spotted 👀</title>
 
 <style>
-body {
-  margin:0;
-  font-family:Inter;
-  background:black;
-  color:#f8f5f0;
-}
-
-header {
-  text-align:center;
-  padding:20px;
-  font-family:Cinzel;
-  color:gold;
-}
-
-.layout {display:flex;}
-
-.sidebar {
-  width:220px;
-  padding:10px;
-  border-right:1px solid #333;
-}
-
-.main {
-  flex:1;
-  padding:20px;
-}
-
-.card {
-  background:#111;
-  padding:15px;
-  border-radius:15px;
-  margin-bottom:15px;
-  border:1px solid #333;
-}
-
-button {
-  background:gold;
-  border:none;
-  padding:8px;
-  border-radius:10px;
-  cursor:pointer;
-}
-
-input, textarea, select {
-  width:100%;
-  margin:5px 0;
-  padding:8px;
-  background:#000;
-  color:white;
-  border:1px solid #333;
-}
-
-img {max-width:100%; border-radius:10px;}
-
-.blast {
-  position:fixed;
-  top:20px;
-  left:50%;
-  transform:translateX(-50%);
-  background:black;
-  color:gold;
-  padding:10px;
-  border:2px solid gold;
-}
-
-.exposed {
-  box-shadow:0 0 20px red;
-}
+body {background:black;color:white;font-family:sans-serif;}
+.card {background:#111;padding:15px;margin:10px;border-radius:10px;}
+button {background:gold;border:none;padding:8px;margin:5px;}
+textarea {width:100%;padding:10px;margin:10px 0;}
 </style>
-</head>
 
+</head>
 <body>
 
-<header>
-  <h1>Spotted</h1>
-  <p>XOXO Gossip Girl</p>
-  <button onclick="login()">Login</button>
-  <button onclick="logout()">Logout</button>
-  <button onclick="adminLogin()">👑 Admin</button>
-</header>
+<h1>Spotted 👀</h1>
 
-<div class="layout">
+<button onclick="signup()">Sign Up</button>
+<button onclick="login()">Login</button>
+<button onclick="logout()">Logout</button>
 
-<div class="sidebar">
-  <h3>📩 Tips</h3>
-  <button onclick="sendTip()">Send Tip</button>
-  <button onclick="viewTips()">View Tips</button>
-
-  <h3>💬 Chat</h3>
-  <button onclick="sendChat()">Send Chat</button>
-  <div id="chat"></div>
-
-  <h3>💔 Status</h3>
-  <button onclick="setRelationship()">Set Status</button>
-</div>
-
-<div class="main">
-
-<div class="card">
-<textarea id="postText"></textarea>
-<input id="image" type="file">
-<select id="category">
-<option>Drama</option>
-<option>School</option>
-<option>Relationships</option>
-</select>
+<div>
+<textarea id="postText" placeholder="Spotted..."></textarea>
 <button onclick="createPost()">Post</button>
 </div>
 
 <div id="posts"></div>
 
-</div>
+<script type="module">
 
-</div>
+// 🔥 IMPORTS (v12 style)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { 
+  getAuth, createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, signOut, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
-<script>
+import { 
+  getFirestore, collection, addDoc, 
+  onSnapshot, query, orderBy 
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-let posts = JSON.parse(localStorage.getItem('posts')||"[]");
-let tips = JSON.parse(localStorage.getItem('tips')||"[]");
-let chat = JSON.parse(localStorage.getItem('chat')||"[]");
+// 🔐 YOUR CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyCjrvmy6yxF9N5evXShQNM3Vt9LhmtqafA",
+  authDomain: "gossipgirl-a4f2d.firebaseapp.com",
+  projectId: "gossipgirl-a4f2d",
+  storageBucket: "gossipgirl-a4f2d.firebasestorage.app",
+  messagingSenderId: "367254403065",
+  appId: "1:367254403065:web:70246b85fcc093453a6f28"
+};
 
-let user = localStorage.getItem('user');
-let isAdmin = false;
+// INIT
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-function save(){
-  localStorage.setItem('posts',JSON.stringify(posts));
-  localStorage.setItem('tips',JSON.stringify(tips));
-  localStorage.setItem('chat',JSON.stringify(chat));
-}
-
-function login(){
-  if(user) return alert("Already logged in");
-  user = prompt("Username:");
-  localStorage.setItem('user',user);
-}
-
-function logout(){
-  user=null;
-  localStorage.removeItem('user');
-}
-
-function adminLogin(){
-  if(prompt("Password:") === "xoxo"){
-    isAdmin=true;
-    alert("Welcome Gossip Girl");
+// 🔐 AUTH FUNCTIONS
+window.signup = async function(){
+  const email = prompt("Email:");
+  const pass = prompt("Password:");
+  try {
+    await createUserWithEmailAndPassword(auth, email, pass);
+    alert("Account created!");
+  } catch(e){
+    alert(e.message);
   }
-}
+};
 
-function showBlast(text){
-  const el = document.createElement('div');
-  el.className='blast';
-  el.innerText="SPOTTED: "+text;
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),3000);
-}
+window.login = async function(){
+  const email = prompt("Email:");
+  const pass = prompt("Password:");
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    alert("Logged in!");
+  } catch(e){
+    alert(e.message);
+  }
+};
 
-function createPost(){
-  const file = document.getElementById('image').files[0];
-  const reader = new FileReader();
+window.logout = function(){
+  signOut(auth);
+};
 
-  reader.onload = function(e){
-    posts.unshift({
-      text:document.getElementById('postText').value,
-      img:e.target.result,
-      user:user||"Anonymous",
-      likes:0,
-      comments:[],
-      exposed:false,
-      category:document.getElementById('category').value
-    });
-    save();
-    showBlast(posts[0].text);
-    render();
+// 📌 CURRENT USER
+let currentUser = null;
+
+onAuthStateChanged(auth, (user)=>{
+  if(user){
+    currentUser = user;
+    console.log("Logged in as", user.email);
+  } else {
+    currentUser = null;
+    console.log("Logged out");
+  }
+});
+
+// 📝 CREATE POST
+window.createPost = async function(){
+  if(!currentUser){
+    alert("Login first!");
+    return;
   }
 
-  if(file) reader.readAsDataURL(file);
-  else reader.onload({target:{result:''}});
-}
+  const text = document.getElementById("postText").value;
 
-function addComment(i){
-  const text = prompt("Comment:");
-  if(!text) return;
-  posts[i].comments.push({text});
-  save();
-  render();
-}
+  await addDoc(collection(db, "posts"), {
+    text: text,
+    user: currentUser.email,
+    time: Date.now()
+  });
 
-function render(){
-  const div = document.getElementById('posts');
-  div.innerHTML='';
+  document.getElementById("postText").value = "";
+};
 
-  posts.forEach((p,i)=>{
-    const el = document.createElement('div');
-    el.className='card';
-    if(p.exposed) el.classList.add('exposed');
+// 🔥 REAL-TIME POSTS
+const q = query(collection(db, "posts"), orderBy("time","desc"));
+
+onSnapshot(q, (snapshot)=>{
+  const postsDiv = document.getElementById("posts");
+  postsDiv.innerHTML = "";
+
+  snapshot.forEach(doc=>{
+    const p = doc.data();
+
+    const el = document.createElement("div");
+    el.className = "card";
 
     el.innerHTML = `
-      <b>${p.user}</b> • ${p.category}
+      <b>${p.user}</b>
       <p>${p.text}</p>
-      ${p.img?`<img src="${p.img}">`:''}
     `;
 
-    const like = document.createElement('button');
-    like.innerText="❤ "+p.likes;
-    like.onclick=()=>{p.likes++; save(); render();};
-
-    const expose = document.createElement('button');
-    expose.innerText="🔥 Expose";
-    expose.onclick=()=>{
-      p.exposed=!p.exposed;
-      document.body.style.background="darkred";
-      setTimeout(()=>document.body.style.background="black",300);
-      save(); render();
-    };
-
-    el.appendChild(like);
-    el.appendChild(expose);
-
-    if(isAdmin){
-      const del = document.createElement('button');
-      del.innerText="Delete";
-      del.onclick=()=>{posts.splice(i,1); save(); render();};
-      el.appendChild(del);
-    }
-
-    p.comments.forEach(c=>{
-      const cEl = document.createElement('div');
-      cEl.innerText="💬 "+c.text;
-      el.appendChild(cEl);
-    });
-
-    const cBtn = document.createElement('button');
-    cBtn.innerText="Comment";
-    cBtn.onclick=()=>addComment(i);
-
-    el.appendChild(cBtn);
-
-    div.appendChild(el);
+    postsDiv.appendChild(el);
   });
-
-  renderChat();
-}
-
-function sendTip(){
-  const t = prompt("Tip:");
-  if(t){ tips.push(t); save(); }
-}
-
-function viewTips(){
-  if(isAdmin) alert(tips.join("\n\n"));
-}
-
-function sendChat(){
-  const msg = prompt("Message:");
-  chat.push({user:user,text:msg});
-  save();
-  renderChat();
-}
-
-function renderChat(){
-  const div = document.getElementById('chat');
-  div.innerHTML='';
-  chat.forEach(c=>{
-    const el = document.createElement('div');
-    el.innerText=c.user+": "+c.text;
-    div.appendChild(el);
-  });
-}
-
-function setRelationship(){
-  const r = prompt("Status:");
-  localStorage.setItem('relationship',r);
-}
-
-window.onload = render;
+});
 
 </script>
 

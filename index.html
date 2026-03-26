@@ -25,8 +25,8 @@ header {
 
 .sidebar {
   width:220px;
-  border-right:1px solid #333;
   padding:10px;
+  border-right:1px solid #333;
 }
 
 .main {
@@ -60,10 +60,6 @@ input, textarea {
 }
 
 img {max-width:100%; border-radius:10px;}
-
-.exposed {
-  box-shadow:0 0 15px red;
-}
 </style>
 </head>
 
@@ -72,6 +68,7 @@ img {max-width:100%; border-radius:10px;}
 <header>
   <h1>Spotted</h1>
   <p>XOXO Gossip Girl</p>
+
   <button onclick="signup()">Sign Up</button>
   <button onclick="login()">Login</button>
   <button onclick="logout()">Logout</button>
@@ -105,11 +102,26 @@ img {max-width:100%; border-radius:10px;}
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
-import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDocs }
-from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCjrvmy6yxF9N5evXShQNM3Vt9LhmtqafA",
@@ -125,33 +137,21 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentUser = null;
-let isAdmin = false;
+
+// 👑 persistent admin
+let isAdmin = localStorage.getItem("admin") === "true";
 
 onAuthStateChanged(auth, user => {
   currentUser = user;
 });
 
-// 💎 USERNAME HANDLER (FIXED)
+// 💎 username system
 function setUsername(name){
   localStorage.setItem("username", name);
 }
 
 function getUsername(){
   return localStorage.getItem("username") || "Anonymous";
-}
-
-// 🔔 NOTIFICATIONS
-function notify(msg){
-  const n = document.createElement("div");
-  n.innerText = msg;
-  n.style.position="fixed";
-  n.style.bottom="20px";
-  n.style.right="20px";
-  n.style.background="black";
-  n.style.color="gold";
-  n.style.padding="10px";
-  document.body.appendChild(n);
-  setTimeout(()=>n.remove(),3000);
 }
 
 // 🔐 SIGNUP
@@ -164,7 +164,7 @@ window.signup = async () => {
 
   await addDoc(collection(db,"users"),{
     uid:userCred.user.uid,
-    username:username
+    username
   });
 
   setUsername(username);
@@ -192,11 +192,12 @@ window.login = async () => {
 
 window.logout = () => signOut(auth);
 
-// 👑 ADMIN
+// 👑 ADMIN LOGIN (FIXED)
 window.adminLogin = () => {
   if(prompt("Admin password") === "xoxo"){
     isAdmin = true;
-    alert("Admin mode activated");
+    localStorage.setItem("admin","true");
+    alert("Admin mode enabled 👑");
   }
 };
 
@@ -208,6 +209,7 @@ window.createPost = async () => {
   const file = document.getElementById("image").files[0];
 
   let img = "";
+
   if(file){
     const reader = new FileReader();
     reader.onload = async () => {
@@ -218,7 +220,6 @@ window.createPost = async () => {
         img,
         user:getUsername(),
         likes:[],
-        exposed:false,
         time:Date.now()
       });
     };
@@ -231,11 +232,8 @@ window.createPost = async () => {
     img:"",
     user:getUsername(),
     likes:[],
-    exposed:false,
     time:Date.now()
   });
-
-  notify("Posted!");
 };
 
 // ❤️ LIKE
@@ -251,41 +249,7 @@ async function likePost(id,likes){
   await updateDoc(doc(db,"posts",id),{likes:updated});
 }
 
-// 💬 COMMENT
-async function comment(){
-  const text = prompt("Comment:");
-  if(!text) return;
-
-  await addDoc(collection(db,"comments"),{
-    text,
-    user:getUsername(),
-    time:Date.now()
-  });
-}
-
-// 🕵️ TIP
-window.sendTip = async () => {
-  const t = prompt("Tip:");
-  if(t){
-    await addDoc(collection(db,"tips"),{
-      text:t,
-      user:getUsername()
-    });
-  }
-};
-
-window.viewTips = async () => {
-  if(!isAdmin) return alert("Admin only");
-
-  const snap = await getDocs(collection(db,"tips"));
-  let txt="";
-  snap.forEach(d=>{
-    txt += d.data().user + ": " + d.data().text + "\n\n";
-  });
-  alert(txt);
-};
-
-// 💬 DM (username-based FIXED)
+// 💬 DM (simple username-based)
 window.sendDM = async () => {
   const toUser = prompt("Send to username:");
   const msg = prompt("Message:");
@@ -309,10 +273,10 @@ window.sendDM = async () => {
     time:Date.now()
   });
 
-  notify("DM sent");
+  alert("Sent 💬");
 };
 
-// 🔥 POSTS RENDER
+// 🔥 REALTIME POSTS
 onSnapshot(query(collection(db,"posts"),orderBy("time","desc")), snap=>{
   const div = document.getElementById("posts");
   div.innerHTML="";
@@ -328,14 +292,26 @@ onSnapshot(query(collection(db,"posts"),orderBy("time","desc")), snap=>{
       <b>@${p.user}</b>
       <p>${p.text}</p>
       ${p.img ? `<img src="${p.img}">` : ""}
-      <p>❤️ ${p.likes.length}</p>
+      <p>❤️ ${p.likes.length || 0}</p>
     `;
 
+    // ❤️ like
     const likeBtn = document.createElement("button");
     likeBtn.innerText="Like";
-    likeBtn.onclick=()=>likePost(id,p.likes);
+    likeBtn.onclick=()=>likePost(id,p.likes || []);
 
     el.appendChild(likeBtn);
+
+    // 👑 ADMIN DELETE (FIXED)
+    if(isAdmin){
+      const delBtn = document.createElement("button");
+      delBtn.innerText="Delete";
+      delBtn.onclick = async () => {
+        await deleteDoc(doc(db,"posts",id));
+      };
+      el.appendChild(delBtn);
+    }
+
     div.appendChild(el);
   });
 });

@@ -138,14 +138,16 @@ const db = getFirestore(app);
 
 let currentUser = null;
 
-// 👑 persistent admin
-let isAdmin = localStorage.getItem("admin") === "true";
+// 👑 ALWAYS READ LIVE ADMIN STATE (FIX)
+function isAdmin(){
+  return localStorage.getItem("admin") === "true";
+}
 
 onAuthStateChanged(auth, user => {
   currentUser = user;
 });
 
-// 💎 username system
+// 💎 USERNAME SYSTEM
 function setUsername(name){
   localStorage.setItem("username", name);
 }
@@ -194,8 +196,9 @@ window.logout = () => signOut(auth);
 
 // 👑 ADMIN LOGIN (FIXED)
 window.adminLogin = () => {
-  if(prompt("Admin password") === "xoxo"){
-    isAdmin = true;
+  const pass = prompt("Admin password");
+
+  if(pass === "xoxo"){
     localStorage.setItem("admin","true");
     alert("Admin mode enabled 👑");
   }
@@ -213,14 +216,12 @@ window.createPost = async () => {
   if(file){
     const reader = new FileReader();
     reader.onload = async () => {
-      img = reader.result;
-
       await addDoc(collection(db,"posts"),{
         text,
-        img,
-        user:getUsername(),
-        likes:[],
-        time:Date.now()
+        img: reader.result,
+        user: getUsername(),
+        likes: [],
+        time: Date.now()
       });
     };
     reader.readAsDataURL(file);
@@ -249,7 +250,7 @@ async function likePost(id,likes){
   await updateDoc(doc(db,"posts",id),{likes:updated});
 }
 
-// 💬 DM (simple username-based)
+// 💬 DM
 window.sendDM = async () => {
   const toUser = prompt("Send to username:");
   const msg = prompt("Message:");
@@ -295,20 +296,21 @@ onSnapshot(query(collection(db,"posts"),orderBy("time","desc")), snap=>{
       <p>❤️ ${p.likes.length || 0}</p>
     `;
 
-    // ❤️ like
     const likeBtn = document.createElement("button");
-    likeBtn.innerText="Like";
-    likeBtn.onclick=()=>likePost(id,p.likes || []);
+    likeBtn.innerText = "Like";
+    likeBtn.onclick = () => likePost(id, p.likes || []);
 
     el.appendChild(likeBtn);
 
-    // 👑 ADMIN DELETE (FIXED)
-    if(isAdmin){
+    // 👑 ADMIN DELETE (NOW ALWAYS WORKS)
+    if(isAdmin()){
       const delBtn = document.createElement("button");
-      delBtn.innerText="Delete";
+      delBtn.innerText = "Delete";
+
       delBtn.onclick = async () => {
         await deleteDoc(doc(db,"posts",id));
       };
+
       el.appendChild(delBtn);
     }
 

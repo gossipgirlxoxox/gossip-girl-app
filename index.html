@@ -60,6 +60,13 @@ input, textarea {
 }
 
 img {max-width:100%; border-radius:10px;}
+
+.commentBox {
+  margin-top:10px;
+  padding-left:10px;
+  border-left:2px solid #333;
+  font-size:13px;
+}
 </style>
 </head>
 
@@ -115,7 +122,6 @@ import {
   collection,
   addDoc,
   doc,
-  updateDoc,
   deleteDoc,
   onSnapshot,
   query,
@@ -138,7 +144,6 @@ const db = getFirestore(app);
 
 let currentUser = null;
 
-// 👑 ALWAYS READ LIVE ADMIN STATE (FIX)
 function isAdmin(){
   return localStorage.getItem("admin") === "true";
 }
@@ -147,7 +152,6 @@ onAuthStateChanged(auth, user => {
   currentUser = user;
 });
 
-// 💎 USERNAME SYSTEM
 function setUsername(name){
   localStorage.setItem("username", name);
 }
@@ -156,7 +160,6 @@ function getUsername(){
   return localStorage.getItem("username") || "Anonymous";
 }
 
-// 🔐 SIGNUP
 window.signup = async () => {
   const email = prompt("Email:");
   const pass = prompt("Password:");
@@ -170,11 +173,9 @@ window.signup = async () => {
   });
 
   setUsername(username);
-
   alert("Welcome " + username);
 };
 
-// 🔐 LOGIN
 window.login = async () => {
   const email = prompt("Email:");
   const pass = prompt("Password:");
@@ -194,17 +195,13 @@ window.login = async () => {
 
 window.logout = () => signOut(auth);
 
-// 👑 ADMIN LOGIN (FIXED)
 window.adminLogin = () => {
-  const pass = prompt("Admin password");
-
-  if(pass === "xoxo"){
+  if(prompt("Admin password") === "xoxo"){
     localStorage.setItem("admin","true");
-    alert("Admin mode enabled 👑");
+    alert("Admin ON");
   }
 };
 
-// 📝 CREATE POST
 window.createPost = async () => {
   if(!currentUser) return alert("Login first");
 
@@ -219,9 +216,8 @@ window.createPost = async () => {
       await addDoc(collection(db,"posts"),{
         text,
         img: reader.result,
-        user: getUsername(),
-        likes: [],
-        time: Date.now()
+        user:getUsername(),
+        time:Date.now()
       });
     };
     reader.readAsDataURL(file);
@@ -232,52 +228,23 @@ window.createPost = async () => {
     text,
     img:"",
     user:getUsername(),
-    likes:[],
     time:Date.now()
   });
 };
 
-// ❤️ LIKE
-async function likePost(id,likes){
-  if(!currentUser) return;
+// 💬 ADD COMMENT (FIXED)
+async function addComment(postId){
+  const text = prompt("Comment:");
+  if(!text) return;
 
-  const uid = currentUser.uid;
-
-  let updated = likes.includes(uid)
-    ? likes.filter(l=>l!==uid)
-    : [...likes,uid];
-
-  await updateDoc(doc(db,"posts",id),{likes:updated});
+  await addDoc(collection(db,"posts",postId,"comments"),{
+    text,
+    user:getUsername(),
+    time:Date.now()
+  });
 }
 
-// 💬 DM
-window.sendDM = async () => {
-  const toUser = prompt("Send to username:");
-  const msg = prompt("Message:");
-
-  const snap = await getDocs(collection(db,"users"));
-
-  let target = null;
-  snap.forEach(u=>{
-    if(u.data().username === toUser){
-      target = u.data().uid;
-    }
-  });
-
-  if(!target) return alert("User not found");
-
-  const chatId = [getUsername(), toUser].sort().join("_");
-
-  await addDoc(collection(db,"dms",chatId,"messages"),{
-    from:getUsername(),
-    text:msg,
-    time:Date.now()
-  });
-
-  alert("Sent 💬");
-};
-
-// 🔥 REALTIME POSTS
+// 🔥 POSTS + COMMENTS RENDER
 onSnapshot(query(collection(db,"posts"),orderBy("time","desc")), snap=>{
   const div = document.getElementById("posts");
   div.innerHTML="";
@@ -293,26 +260,39 @@ onSnapshot(query(collection(db,"posts"),orderBy("time","desc")), snap=>{
       <b>@${p.user}</b>
       <p>${p.text}</p>
       ${p.img ? `<img src="${p.img}">` : ""}
-      <p>❤️ ${p.likes.length || 0}</p>
     `;
 
-    const likeBtn = document.createElement("button");
-    likeBtn.innerText = "Like";
-    likeBtn.onclick = () => likePost(id, p.likes || []);
+    // 💬 COMMENT BUTTON
+    const cBtn = document.createElement("button");
+    cBtn.innerText = "Comment";
+    cBtn.onclick = () => addComment(id);
+    el.appendChild(cBtn);
 
-    el.appendChild(likeBtn);
-
-    // 👑 ADMIN DELETE (NOW ALWAYS WORKS)
+    // 👑 DELETE (ADMIN)
     if(isAdmin()){
-      const delBtn = document.createElement("button");
-      delBtn.innerText = "Delete";
-
-      delBtn.onclick = async () => {
+      const del = document.createElement("button");
+      del.innerText = "Delete";
+      del.onclick = async () => {
         await deleteDoc(doc(db,"posts",id));
       };
-
-      el.appendChild(delBtn);
+      el.appendChild(del);
     }
+
+    // 💬 LIVE COMMENTS
+    const commentBox = document.createElement("div");
+    commentBox.className = "commentBox";
+
+    onSnapshot(collection(db,"posts",id,"comments"), cSnap=>{
+      commentBox.innerHTML = "";
+
+      cSnap.forEach(c=>{
+        const d = document.createElement("div");
+        d.innerText = `💬 @${c.data().user}: ${c.data().text}`;
+        commentBox.appendChild(d);
+      });
+    });
+
+    el.appendChild(commentBox);
 
     div.appendChild(el);
   });

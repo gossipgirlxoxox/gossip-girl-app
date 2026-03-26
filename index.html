@@ -29,10 +29,7 @@ header {
   border-right:1px solid #333;
 }
 
-.main {
-  flex:1;
-  padding:20px;
-}
+.main {flex:1; padding:20px;}
 
 .card {
   background:#111;
@@ -61,11 +58,9 @@ input, textarea {
 
 img {max-width:100%; border-radius:10px;}
 
-.commentBox {
-  margin-top:10px;
-  padding-left:10px;
-  border-left:2px solid #333;
-  font-size:13px;
+.small {
+  font-size:12px;
+  color:#aaa;
 }
 </style>
 </head>
@@ -87,6 +82,7 @@ img {max-width:100%; border-radius:10px;}
 <div class="sidebar">
   <h3>💬 DMs</h3>
   <button onclick="sendDM()">Send DM</button>
+  <button onclick="viewDMs()">View DMs</button>
 
   <h3>🕵️ Tips</h3>
   <button onclick="sendTip()">Send Tip</button>
@@ -94,16 +90,9 @@ img {max-width:100%; border-radius:10px;}
 </div>
 
 <div class="main">
-
-<div class="card">
-<textarea id="postText" placeholder="Spotted..."></textarea>
-<input type="file" id="image">
-<button onclick="createPost()">Post</button>
+  <div id="panel"></div>
 </div>
 
-<div id="posts"></div>
-
-</div>
 </div>
 
 <script type="module">
@@ -121,12 +110,9 @@ import {
   getFirestore,
   collection,
   addDoc,
-  doc,
-  deleteDoc,
-  onSnapshot,
+  getDocs,
   query,
-  orderBy,
-  getDocs
+  orderBy
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -144,159 +130,124 @@ const db = getFirestore(app);
 
 let currentUser = null;
 
-function isAdmin(){
-  return localStorage.getItem("admin") === "true";
-}
+onAuthStateChanged(auth, u => currentUser = u);
 
-onAuthStateChanged(auth, user => {
-  currentUser = user;
-});
-
-function setUsername(name){
-  localStorage.setItem("username", name);
-}
-
-function getUsername(){
+function username(){
   return localStorage.getItem("username") || "Anonymous";
 }
 
-window.signup = async () => {
-  const email = prompt("Email:");
-  const pass = prompt("Password:");
-  const username = prompt("Username:");
+function setPanel(html){
+  document.getElementById("panel").innerHTML = html;
+}
 
-  const userCred = await createUserWithEmailAndPassword(auth,email,pass);
+function isAdmin(){
+  return localStorage.getItem("admin")==="true";
+}
+
+/* ================= AUTH ================= */
+
+window.signup = async () => {
+  const email = prompt("Email");
+  const pass = prompt("Password");
+  const user = prompt("Username");
+
+  const cred = await createUserWithEmailAndPassword(auth,email,pass);
 
   await addDoc(collection(db,"users"),{
-    uid:userCred.user.uid,
-    username
+    uid:cred.user.uid,
+    username:user
   });
 
-  setUsername(username);
-  alert("Welcome " + username);
+  localStorage.setItem("username",user);
+  alert("Welcome " + user);
 };
 
 window.login = async () => {
-  const email = prompt("Email:");
-  const pass = prompt("Password:");
+  const email = prompt("Email");
+  const pass = prompt("Password");
 
-  const userCred = await signInWithEmailAndPassword(auth,email,pass);
-
-  const users = await getDocs(collection(db,"users"));
-
-  users.forEach(u=>{
-    if(u.data().uid === userCred.user.uid){
-      setUsername(u.data().username);
-    }
-  });
-
-  alert("Logged in as " + getUsername());
+  const cred = await signInWithEmailAndPassword(auth,email,pass);
+  alert("Logged in");
 };
 
 window.logout = () => signOut(auth);
 
 window.adminLogin = () => {
-  if(prompt("Admin password") === "xoxo"){
+  if(prompt("Admin pass") === "xoxo"){
     localStorage.setItem("admin","true");
-    alert("Admin ON");
+    alert("Admin enabled");
   }
 };
 
-window.createPost = async () => {
-  if(!currentUser) return alert("Login first");
+/* ================= TIPS ================= */
 
-  const text = document.getElementById("postText").value;
-  const file = document.getElementById("image").files[0];
-
-  let img = "";
-
-  if(file){
-    const reader = new FileReader();
-    reader.onload = async () => {
-      await addDoc(collection(db,"posts"),{
-        text,
-        img: reader.result,
-        user:getUsername(),
-        time:Date.now()
-      });
-    };
-    reader.readAsDataURL(file);
-    return;
-  }
-
-  await addDoc(collection(db,"posts"),{
-    text,
-    img:"",
-    user:getUsername(),
-    time:Date.now()
-  });
-};
-
-// 💬 ADD COMMENT (FIXED)
-async function addComment(postId){
-  const text = prompt("Comment:");
+window.sendTip = async () => {
+  const text = prompt("Anonymous tip:");
   if(!text) return;
 
-  await addDoc(collection(db,"posts",postId,"comments"),{
+  await addDoc(collection(db,"tips"),{
     text,
-    user:getUsername(),
     time:Date.now()
   });
-}
 
-// 🔥 POSTS + COMMENTS RENDER
-onSnapshot(query(collection(db,"posts"),orderBy("time","desc")), snap=>{
-  const div = document.getElementById("posts");
-  div.innerHTML="";
+  alert("Tip sent anonymously");
+};
 
-  snap.forEach(docSnap=>{
-    const p = docSnap.data();
-    const id = docSnap.id;
+window.viewTips = async () => {
+  const snap = await getDocs(query(collection(db,"tips"),orderBy("time","desc")));
 
-    const el = document.createElement("div");
-    el.className="card";
+  let html = "<h2>🕵️ Tips</h2>";
 
-    el.innerHTML = `
-      <b>@${p.user}</b>
-      <p>${p.text}</p>
-      ${p.img ? `<img src="${p.img}">` : ""}
+  snap.forEach(d=>{
+    html += `
+      <div class="card">
+        🕵️ ${d.data().text}
+        <div class="small">Anonymous</div>
+      </div>
     `;
-
-    // 💬 COMMENT BUTTON
-    const cBtn = document.createElement("button");
-    cBtn.innerText = "Comment";
-    cBtn.onclick = () => addComment(id);
-    el.appendChild(cBtn);
-
-    // 👑 DELETE (ADMIN)
-    if(isAdmin()){
-      const del = document.createElement("button");
-      del.innerText = "Delete";
-      del.onclick = async () => {
-        await deleteDoc(doc(db,"posts",id));
-      };
-      el.appendChild(del);
-    }
-
-    // 💬 LIVE COMMENTS
-    const commentBox = document.createElement("div");
-    commentBox.className = "commentBox";
-
-    onSnapshot(collection(db,"posts",id,"comments"), cSnap=>{
-      commentBox.innerHTML = "";
-
-      cSnap.forEach(c=>{
-        const d = document.createElement("div");
-        d.innerText = `💬 @${c.data().user}: ${c.data().text}`;
-        commentBox.appendChild(d);
-      });
-    });
-
-    el.appendChild(commentBox);
-
-    div.appendChild(el);
   });
-});
+
+  setPanel(html);
+};
+
+/* ================= DMS ================= */
+
+window.sendDM = async () => {
+  const to = prompt("Send to username:");
+  const text = prompt("Message:");
+
+  if(!to || !text) return;
+
+  await addDoc(collection(db,"dms"),{
+    from:username(),
+    to,
+    text,
+    time:Date.now()
+  });
+
+  alert("DM sent");
+};
+
+window.viewDMs = async () => {
+  const snap = await getDocs(query(collection(db,"dms"),orderBy("time","desc")));
+
+  let html = "<h2>💬 DMs</h2>";
+
+  snap.forEach(d=>{
+    const dm = d.data();
+
+    if(dm.to === username() || dm.from === username() || isAdmin()){
+      html += `
+        <div class="card">
+          <b>${dm.from}</b> → <b>${dm.to}</b>
+          <p>${dm.text}</p>
+        </div>
+      `;
+    }
+  });
+
+  setPanel(html);
+};
 
 </script>
 

@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <title>Spotted</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter&display=swap" rel="stylesheet">
 
 <style>
 body {
   margin:0;
   font-family:Inter;
   background:black;
-  color:#f8f5f0;
+  color:white;
 }
 
 header {
@@ -25,8 +25,8 @@ header {
 
 .sidebar {
   width:220px;
-  padding:10px;
   border-right:1px solid #333;
+  padding:10px;
 }
 
 .main {
@@ -37,24 +37,23 @@ header {
 .card {
   background:#111;
   padding:15px;
-  border-radius:15px;
-  margin-bottom:15px;
-  animation: fadeIn 0.4s ease;
+  border-radius:12px;
+  margin-bottom:12px;
 }
 
 button {
   background:gold;
   border:none;
-  padding:8px;
-  border-radius:10px;
+  padding:6px 10px;
+  border-radius:8px;
   cursor:pointer;
   margin:3px;
 }
 
 input, textarea {
   width:100%;
-  margin:5px 0;
   padding:8px;
+  margin:5px 0;
   background:#000;
   color:white;
   border:1px solid #333;
@@ -62,15 +61,12 @@ input, textarea {
 
 img {max-width:100%; border-radius:10px;}
 
-.exposed {box-shadow:0 0 20px red;}
-
-@keyframes fadeIn {
-  from {opacity:0; transform:translateY(10px);}
-  to {opacity:1; transform:translateY(0);}
+.exposed {
+  box-shadow:0 0 15px red;
 }
 </style>
-
 </head>
+
 <body>
 
 <header>
@@ -79,7 +75,7 @@ img {max-width:100%; border-radius:10px;}
   <button onclick="signup()">Sign Up</button>
   <button onclick="login()">Login</button>
   <button onclick="logout()">Logout</button>
-  <button onclick="adminLogin()">👑 Admin</button>
+  <button onclick="adminLogin()">Admin</button>
 </header>
 
 <div class="layout">
@@ -87,9 +83,8 @@ img {max-width:100%; border-radius:10px;}
 <div class="sidebar">
   <h3>💬 DMs</h3>
   <button onclick="sendDM()">Send DM</button>
-  <div id="dmList"></div>
 
-  <h3>📩 Tips</h3>
+  <h3>🕵️ Tips</h3>
   <button onclick="sendTip()">Send Tip</button>
   <button onclick="viewTips()">View Tips</button>
 </div>
@@ -110,19 +105,11 @@ img {max-width:100%; border-radius:10px;}
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import {
-  getAuth, createUserWithEmailAndPassword,
-  signInWithEmailAndPassword, signOut, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
-import {
-  getFirestore, collection, addDoc, doc,
-  updateDoc, deleteDoc, onSnapshot, query, orderBy, getDocs
-} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-
-import {
-  getStorage, ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
+import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDocs }
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCjrvmy6yxF9N5evXShQNM3Vt9LhmtqafA",
@@ -136,17 +123,27 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 let currentUser = null;
 let isAdmin = false;
 
-onAuthStateChanged(auth, user => currentUser = user);
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+});
 
-// 🔔 Notification
-function notify(text){
+// 💎 USERNAME HANDLER (FIXED)
+function setUsername(name){
+  localStorage.setItem("username", name);
+}
+
+function getUsername(){
+  return localStorage.getItem("username") || "Anonymous";
+}
+
+// 🔔 NOTIFICATIONS
+function notify(msg){
   const n = document.createElement("div");
-  n.innerText = text;
+  n.innerText = msg;
   n.style.position="fixed";
   n.style.bottom="20px";
   n.style.right="20px";
@@ -157,7 +154,7 @@ function notify(text){
   setTimeout(()=>n.remove(),3000);
 }
 
-// 🔐 SIGNUP WITH USERNAME
+// 🔐 SIGNUP
 window.signup = async () => {
   const email = prompt("Email:");
   const pass = prompt("Password:");
@@ -169,144 +166,150 @@ window.signup = async () => {
     uid:userCred.user.uid,
     username:username
   });
+
+  setUsername(username);
+
+  alert("Welcome " + username);
 };
 
 // 🔐 LOGIN
 window.login = async () => {
   const email = prompt("Email:");
   const pass = prompt("Password:");
-  await signInWithEmailAndPassword(auth,email,pass);
+
+  const userCred = await signInWithEmailAndPassword(auth,email,pass);
+
+  const users = await getDocs(collection(db,"users"));
+
+  users.forEach(u=>{
+    if(u.data().uid === userCred.user.uid){
+      setUsername(u.data().username);
+    }
+  });
+
+  alert("Logged in as " + getUsername());
 };
 
 window.logout = () => signOut(auth);
 
 // 👑 ADMIN
 window.adminLogin = () => {
-  if(prompt("Password") === "xoxo"){
+  if(prompt("Admin password") === "xoxo"){
     isAdmin = true;
-    alert("Welcome Gossip Girl");
+    alert("Admin mode activated");
   }
 };
 
-// 🔎 GET USERNAME
-async function getUsername(uid){
-  const snap = await getDocs(collection(db,"users"));
-  let name = "Unknown";
-  snap.forEach(doc=>{
-    if(doc.data().uid === uid){
-      name = doc.data().username;
-    }
-  });
-  return name;
-}
-
-// 📸 IMAGE UPLOAD
-async function uploadImage(file){
-  const storageRef = ref(storage, 'images/' + Date.now());
-  await uploadBytes(storageRef, file);
-  return await getDownloadURL(storageRef);
-}
-
-// 📝 POST
+// 📝 CREATE POST
 window.createPost = async () => {
   if(!currentUser) return alert("Login first");
 
-  const text = document.getElementById('postText').value;
-  const file = document.getElementById('image').files[0];
+  const text = document.getElementById("postText").value;
+  const file = document.getElementById("image").files[0];
 
   let img = "";
-  if(file) img = await uploadImage(file);
+  if(file){
+    const reader = new FileReader();
+    reader.onload = async () => {
+      img = reader.result;
 
-  const username = await getUsername(currentUser.uid);
+      await addDoc(collection(db,"posts"),{
+        text,
+        img,
+        user:getUsername(),
+        likes:[],
+        exposed:false,
+        time:Date.now()
+      });
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
 
   await addDoc(collection(db,"posts"),{
     text,
-    img,
-    user:username,
-    uid:currentUser.uid,
+    img:"",
+    user:getUsername(),
     likes:[],
     exposed:false,
     time:Date.now()
   });
 
-  notify("New gossip posted 👀");
+  notify("Posted!");
 };
 
 // ❤️ LIKE
 async function likePost(id,likes){
   if(!currentUser) return;
-  let updated = likes.includes(currentUser.uid)
-    ? likes.filter(l=>l!==currentUser.uid)
-    : [...likes,currentUser.uid];
+
+  const uid = currentUser.uid;
+
+  let updated = likes.includes(uid)
+    ? likes.filter(l=>l!==uid)
+    : [...likes,uid];
 
   await updateDoc(doc(db,"posts",id),{likes:updated});
 }
 
 // 💬 COMMENT
-async function addComment(postId){
+async function comment(){
   const text = prompt("Comment:");
   if(!text) return;
 
-  const username = await getUsername(currentUser.uid);
-
-  await addDoc(collection(db,"posts",postId,"comments"),{
+  await addDoc(collection(db,"comments"),{
     text,
-    user:username,
+    user:getUsername(),
     time:Date.now()
   });
 }
 
-// 👑 DELETE / EXPOSE
-async function deletePost(id){
-  if(!isAdmin) return;
-  await deleteDoc(doc(db,"posts",id));
-}
+// 🕵️ TIP
+window.sendTip = async () => {
+  const t = prompt("Tip:");
+  if(t){
+    await addDoc(collection(db,"tips"),{
+      text:t,
+      user:getUsername()
+    });
+  }
+};
 
-async function exposePost(id,val){
-  if(!isAdmin) return;
-  await updateDoc(doc(db,"posts",id),{exposed:!val});
-}
+window.viewTips = async () => {
+  if(!isAdmin) return alert("Admin only");
 
-// 💬 DM SYSTEM (FIXED)
+  const snap = await getDocs(collection(db,"tips"));
+  let txt="";
+  snap.forEach(d=>{
+    txt += d.data().user + ": " + d.data().text + "\n\n";
+  });
+  alert(txt);
+};
+
+// 💬 DM (username-based FIXED)
 window.sendDM = async () => {
-  const username = prompt("Send to:");
+  const toUser = prompt("Send to username:");
   const msg = prompt("Message:");
 
-  const users = await getDocs(collection(db,"users"));
-  let target = null;
+  const snap = await getDocs(collection(db,"users"));
 
-  users.forEach(u=>{
-    if(u.data().username === username){
+  let target = null;
+  snap.forEach(u=>{
+    if(u.data().username === toUser){
       target = u.data().uid;
     }
   });
 
   if(!target) return alert("User not found");
 
-  const chatId = [currentUser.uid,target].sort().join("_");
+  const chatId = [getUsername(), toUser].sort().join("_");
 
   await addDoc(collection(db,"dms",chatId,"messages"),{
+    from:getUsername(),
     text:msg,
-    from:currentUser.uid,
     time:Date.now()
   });
 
-  notify("DM sent 💬");
-};
-
-// 🕵️ TIPS
-window.sendTip = async ()=>{
-  const t = prompt("Tip:");
-  if(t) await addDoc(collection(db,"tips"),{text:t,time:Date.now()});
-};
-
-window.viewTips = ()=>{
-  if(!isAdmin) return alert("Admins only");
-  onSnapshot(collection(db,"tips"), snap=>{
-    let txt="";
-    snap.forEach(d=>txt+=d.data().text+"\n\n");
-    alert(txt);
-  });
+  notify("DM sent");
 };
 
 // 🔥 POSTS RENDER
@@ -320,14 +323,11 @@ onSnapshot(query(collection(db,"posts"),orderBy("time","desc")), snap=>{
 
     const el = document.createElement("div");
     el.className="card";
-    if(p.exposed) el.classList.add("exposed");
-
-    const badge = p.likes.length > 5 ? "💎 Elite" : "";
 
     el.innerHTML = `
-      <b>${p.user} ${badge}</b>
+      <b>@${p.user}</b>
       <p>${p.text}</p>
-      ${p.img?`<img src="${p.img}">`:''}
+      ${p.img ? `<img src="${p.img}">` : ""}
       <p>❤️ ${p.likes.length}</p>
     `;
 
@@ -335,38 +335,7 @@ onSnapshot(query(collection(db,"posts"),orderBy("time","desc")), snap=>{
     likeBtn.innerText="Like";
     likeBtn.onclick=()=>likePost(id,p.likes);
 
-    const cBtn = document.createElement("button");
-    cBtn.innerText="Comment";
-    cBtn.onclick=()=>addComment(id);
-
     el.appendChild(likeBtn);
-    el.appendChild(cBtn);
-
-    if(isAdmin){
-      const del = document.createElement("button");
-      del.innerText="Delete";
-      del.onclick=()=>deletePost(id);
-
-      const ex = document.createElement("button");
-      ex.innerText="Expose";
-      ex.onclick=()=>exposePost(id,p.exposed);
-
-      el.appendChild(del);
-      el.appendChild(ex);
-    }
-
-    const commentsDiv = document.createElement("div");
-
-    onSnapshot(collection(db,"posts",id,"comments"), cSnap=>{
-      commentsDiv.innerHTML="";
-      cSnap.forEach(c=>{
-        const el = document.createElement("div");
-        el.innerText="💬 "+c.data().text;
-        commentsDiv.appendChild(el);
-      });
-    });
-
-    el.appendChild(commentsDiv);
     div.appendChild(el);
   });
 });
